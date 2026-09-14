@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             ExpenseTrackerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "ExpenseTracker",
+                        name = "My Expense Tracker",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
