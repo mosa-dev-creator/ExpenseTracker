@@ -19,3 +19,7 @@ L'objectif est de faciliter l'enregistrement, la modification et la suppression 
 - Kotlin
 - Jetpack Compose
 - Material 3
+
+## Aperçu
+
+![Écran principal de ExpenseTracker](screenshots/home.png)
