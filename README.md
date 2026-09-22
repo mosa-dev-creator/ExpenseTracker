@@ -20,6 +20,12 @@ L'objectif est de faciliter l'enregistrement, la modification et la suppression 
 - Jetpack Compose
 - Material 3
 
+## Prérequis
+
+- Android Studio
+- Android SDK 37
+- JDK 17 ou version ultérieure
+
 ## Aperçu
 
 ![Écran principal de ExpenseTracker](screenshots/home.png)
