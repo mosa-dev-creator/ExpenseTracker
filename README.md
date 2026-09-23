@@ -28,7 +28,10 @@ L'objectif est de faciliter l'enregistrement, la modification et la suppression 
 
 ## Installation et exécution
 
-1. Cloner le dépôt
+1. Cloner le dépôt :
+```bash
+git clone https://github.com/mosa-dev-creator/ExpenseTracker.git
+```
 2. Ouvrir le projet dans Android Studio
 3. Laisser Gradle synchroniser le projet
 4. Sélectionner un émulateur ou un appareil android
