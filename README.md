@@ -39,4 +39,4 @@ git clone https://github.com/mosa-dev-creator/ExpenseTracker.git
 
 ## Aperçu
 
-![Écran principal de ExpenseTracker](screenshots/home.png)
+<img src="screenshots/home.png" alt="Écran principal de ExpenseTracker" width="300">
