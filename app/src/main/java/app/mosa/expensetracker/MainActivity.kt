@@ -4,13 +4,28 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.mosa.expensetracker.ui.theme.ExpenseTrackerTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,8 +35,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ExpenseTrackerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Expense Tracker Home",
+                    HommeScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -31,17 +45,109 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun HommeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: ExpenseViewModel = viewModel()
+) {
+
+    LaunchedEffect(Unit) {
+        viewModel.loadExpenses()
+    }
+
+    var amount by remember { mutableStateOf("") }
+
+    val uiState = viewModel.uiState.collectAsState()
+    val state = uiState.value
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+
+        Text(
+            text = "ExpenseTracker",
+            fontSize = 24.sp
+        )
+
+        Text(
+            text = "Suivis de vos dépenses"
+        )
+
+        when(state){
+            is ExpenseUiState.Loading -> {
+                Text(
+                    text = "Chargement..."
+                )
+            }
+
+            is ExpenseUiState.Success -> {
+
+                val totalExpenses = state.expenses.sumOf { it.amount }
+
+                Text(
+                    text = "Total des dépenses",
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = totalExpenses.toString()
+                )
+
+                LazyColumn {
+                    items(state.expenses.size){ index ->
+
+                        val expense = state.expenses[index]
+
+                        Text(
+                            text = expense.amount.toString()
+                        )
+                    }
+                }
+            }
+
+            is ExpenseUiState.Error -> {
+                Text(
+                    text = state.message
+                )
+
+                Button(
+                    onClick = {
+                        viewModel.loadExpenses()
+                    }
+                ) {
+                    Text(text = "Réessayer")
+                }
+            }
+        }
+
+        TextField(
+            value = amount,
+            onValueChange = { amount = it }
+        )
+
+        Text(
+            text = amount.toIntOrNull()?.toString() ?: "Montant Invalide"
+        )
+
+        Button(
+            onClick = {
+                val montant = amount.toIntOrNull()
+
+                if (montant != null) {
+                    viewModel.addExpense(Expense(montant))
+                    amount = ""
+                }
+            }
+        ) {
+            Text(text = "Ajouter une dépense")
+        }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     ExpenseTrackerTheme {
-        Greeting("Android")
+        HommeScreen()
     }
 }
