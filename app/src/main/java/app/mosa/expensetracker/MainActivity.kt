@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,12 +23,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.mosa.expensetracker.ui.theme.ExpenseTrackerTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,9 +51,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun HommeScreen(
-    modifier: Modifier = Modifier,
-    viewModel: ExpenseViewModel = viewModel()
+    modifier: Modifier = Modifier
 ) {
+
+    val viewModel: ExpenseViewModel = hiltViewModel()
 
     LaunchedEffect(Unit) {
         viewModel.loadExpenses()
@@ -103,6 +109,42 @@ fun HommeScreen(
                         )
                     }
                 }
+
+                val montantSaisi = amount.toIntOrNull()
+
+                val messageErreur = when {
+
+                    amount.isBlank() -> null
+                    montantSaisi == null -> "Saisissez un nombre entier valide"
+                    montantSaisi <= 0 -> "Le montant doit être supérieur à zéro"
+                    else -> null
+                }
+
+                TextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    )
+                )
+
+                if (messageErreur != null){
+                    Text(
+                        text = messageErreur
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        if (montantSaisi != null && montantSaisi > 0) {
+                            viewModel.addExpense(Expense(montantSaisi)){
+                                amount = ""
+                            }
+                        }
+                    }
+                ) {
+                    Text(text = "Ajouter une dépense")
+                }
             }
 
             is ExpenseUiState.Error -> {
@@ -118,28 +160,6 @@ fun HommeScreen(
                     Text(text = "Réessayer")
                 }
             }
-        }
-
-        TextField(
-            value = amount,
-            onValueChange = { amount = it }
-        )
-
-        Text(
-            text = amount.toIntOrNull()?.toString() ?: "Montant Invalide"
-        )
-
-        Button(
-            onClick = {
-                val montant = amount.toIntOrNull()
-
-                if (montant != null) {
-                    viewModel.addExpense(Expense(montant))
-                    amount = ""
-                }
-            }
-        ) {
-            Text(text = "Ajouter une dépense")
         }
     }
 }

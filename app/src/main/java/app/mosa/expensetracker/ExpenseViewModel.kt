@@ -2,13 +2,16 @@ package app.mosa.expensetracker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ExpenseViewModel: ViewModel() {
-
-    private val repository: ExpenseRepository = ExpenseRepositoryImpl()
+@HiltViewModel
+class ExpenseViewModel @Inject constructor(
+    private val repository: ExpenseRepository
+): ViewModel() {
 
     private val _uiState = MutableStateFlow<ExpenseUiState>(
         ExpenseUiState.Loading
@@ -18,7 +21,10 @@ class ExpenseViewModel: ViewModel() {
     val uiState = _uiState.asStateFlow()
 
     //Modifier la liste
-    fun addExpense(expense: Expense){
+    fun addExpense(
+        expense: Expense,
+        onSuccess: () -> Unit
+    ){
         viewModelScope.launch {
 
             try {
@@ -29,6 +35,9 @@ class ExpenseViewModel: ViewModel() {
                 _uiState.value = ExpenseUiState.Success(
                     expenses = expenses
                 )
+
+                onSuccess()
+
             } catch (e: Exception){
                 _uiState.value = ExpenseUiState.Error(
                     message = "Impossible d'ajouter la dépense"

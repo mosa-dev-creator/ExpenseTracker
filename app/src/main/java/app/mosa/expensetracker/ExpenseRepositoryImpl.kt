@@ -1,8 +1,10 @@
 package app.mosa.expensetracker
 
 import kotlinx.coroutines.delay
+import javax.inject.Inject
 
-class ExpenseRepositoryImpl: ExpenseRepository {
+
+class ExpenseRepositoryImpl @Inject constructor() : ExpenseRepository {
 
     private val expenses = mutableListOf(
         Expense(150000),
