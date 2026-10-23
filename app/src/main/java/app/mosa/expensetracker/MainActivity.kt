@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.mosa.expensetracker.ui.theme.ExpenseTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -99,14 +98,20 @@ fun HommeScreen(
                     text = totalExpenses.toString()
                 )
 
-                LazyColumn {
-                    items(state.expenses.size){ index ->
+                if (state.expenses.isEmpty()) {
+                    Text(
+                        text = "Aucune dépense enregistrée. Ajoutez votre première dépense ! "
+                    )
+                } else {
+                    LazyColumn {
+                        items(state.expenses.size){ index ->
 
-                        val expense = state.expenses[index]
+                            val expense = state.expenses[index]
 
-                        Text(
-                            text = expense.amount.toString()
-                        )
+                            Text(
+                                text = expense.amount.toString()
+                            )
+                        }
                     }
                 }
 
@@ -137,7 +142,7 @@ fun HommeScreen(
                 Button(
                     onClick = {
                         if (montantSaisi != null && montantSaisi > 0) {
-                            viewModel.addExpense(Expense(montantSaisi)){
+                            viewModel.addExpense(Expense(amount = montantSaisi)){
                                 amount = ""
                             }
                         }
