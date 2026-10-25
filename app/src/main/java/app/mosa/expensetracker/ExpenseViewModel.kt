@@ -3,8 +3,10 @@ package app.mosa.expensetracker
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,7 +22,30 @@ class ExpenseViewModel @Inject constructor(
     //Lire la liste
     val uiState = _uiState.asStateFlow()
 
-    //Modifier la liste
+    private var loadExpensesJob: Job? = null
+
+    fun loadExpenses(){
+
+        loadExpensesJob?.cancel()
+
+        loadExpensesJob = viewModelScope.launch {
+            _uiState.value = ExpenseUiState.Loading
+
+            repository.getExpenses()
+                .catch {
+                    _uiState.value = ExpenseUiState.Error(
+                        message = "Impossible de charger les dépense"
+                    )
+                }
+                .collect { expenses ->
+                    _uiState.value = ExpenseUiState.Success(
+                        expenses = expenses
+                    )
+                }
+        }
+    }
+
+    //Ajouter une dépense
     fun addExpense(
         expense: Expense,
         onSuccess: () -> Unit
@@ -29,15 +54,7 @@ class ExpenseViewModel @Inject constructor(
 
             try {
                 repository.addExpense(expense)
-
-                val expenses = repository.getExpenses()
-
-                _uiState.value = ExpenseUiState.Success(
-                    expenses = expenses
-                )
-
                 onSuccess()
-
             } catch (e: Exception){
                 _uiState.value = ExpenseUiState.Error(
                     message = "Impossible d'ajouter la dépense"
@@ -46,19 +63,16 @@ class ExpenseViewModel @Inject constructor(
         }
     }
 
-    fun loadExpenses(){
+    //Supprimer une dépense
+    fun deleteExpense(
+        expense: Expense
+    ){
         viewModelScope.launch {
-            _uiState.value = ExpenseUiState.Loading
-
             try {
-                val expenses = repository.getExpenses()
-
-                _uiState.value = ExpenseUiState.Success(
-                    expenses = expenses
-                )
+                repository.deleteExpense(expense)
             } catch (e: Exception) {
                 _uiState.value = ExpenseUiState.Error(
-                    message = "Impossible de charger les dépenses"
+                    message = "Impossible de supprimer la dépense"
                 )
             }
         }
