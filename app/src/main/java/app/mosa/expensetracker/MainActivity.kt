@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,6 +69,7 @@ fun HommeScreen(
     }
 
     var amount by remember { mutableStateOf("") }
+    var expenseToEdit by remember { mutableStateOf<Expense?>(null) }
 
     val uiState = viewModel.uiState.collectAsState()
     val state = uiState.value
@@ -123,7 +125,11 @@ fun HommeScreen(
                             ) {
                                 //Dépense
                                 Text(
-                                    text = expense.amount.toString()
+                                    text = expense.amount.toString(),
+                                    modifier = Modifier.clickable {
+                                        expenseToEdit = expense
+                                        amount = expense.amount.toString()
+                                    }
                                 )
 
                                 //Icone Supprimer
@@ -170,13 +176,37 @@ fun HommeScreen(
                 Button(
                     onClick = {
                         if (montantSaisi != null && montantSaisi > 0) {
-                            viewModel.addExpense(Expense(amount = montantSaisi)){
-                                amount = ""
+
+                            val selectedExpense = expenseToEdit
+
+                            if (selectedExpense == null) {
+                                // Ajouter une nouvelle dépense
+                                viewModel.addExpense(
+                                    Expense(amount = montantSaisi)
+                                ){
+                                    amount = ""
+                                }
+                            } else {
+                                // Modifier la dépense sélectionnée
+                                viewModel.updateExpense(
+                                    selectedExpense.copy(
+                                        amount = montantSaisi
+                                    ),
+                                    onSuccess = {
+                                        amount = ""
+                                        expenseToEdit = null
+                                    }
+                                )
                             }
                         }
                     }
                 ) {
-                    Text(text = "Ajouter une dépense")
+                    Text(
+                        text = if (expenseToEdit == null) {
+                            "Ajouter une dépense"
+                        } else {
+                            "Enregistrer la modification"
+                        })
                 }
             }
 

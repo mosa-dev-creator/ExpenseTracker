@@ -63,6 +63,23 @@ class ExpenseViewModel @Inject constructor(
         }
     }
 
+    //Modifier une dépense
+    fun updateExpense(
+        expense: Expense,
+        onSuccess: () -> Unit
+    ){
+        viewModelScope.launch {
+            try {
+                repository.updateExpense(expense)
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.value = ExpenseUiState.Error(
+                    message = "Impossible de modifier la dépense"
+                )
+            }
+        }
+    }
+
     //Supprimer une dépense
     fun deleteExpense(
         expense: Expense
