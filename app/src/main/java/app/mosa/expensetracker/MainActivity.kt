@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,8 +71,10 @@ fun HommeScreen(
         viewModel.loadExpenses()
     }
 
-    var amount by remember { mutableStateOf("") }
-    var expenseToEdit by remember { mutableStateOf<Expense?>(null) }
+    var amount by remember { mutableStateOf(value = "") }
+    var description by remember { mutableStateOf(value = "") }
+    var category by remember { mutableStateOf(value = "Autre") }
+    var expenseToEdit by remember { mutableStateOf<Expense?>(value = null) }
 
     val uiState = viewModel.uiState.collectAsState()
     val state = uiState.value
@@ -129,6 +134,8 @@ fun HommeScreen(
                                     modifier = Modifier.clickable {
                                         expenseToEdit = expense
                                         amount = expense.amount.toString()
+                                        description = expense.description
+                                        category = expense.category
                                     }
                                 )
 
@@ -159,6 +166,7 @@ fun HommeScreen(
                     else -> null
                 }
 
+                //Champ : montant
                 TextField(
                     value = amount,
                     onValueChange = { amount = it },
@@ -166,6 +174,57 @@ fun HommeScreen(
                         keyboardType = KeyboardType.Number
                     )
                 )
+
+                //Champ : description
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = {
+                        Text("Description de la dépense")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                //Champ : category
+                var categoryMenuExpanded by remember { mutableStateOf(false) }
+
+                val categories = listOf(
+                    "Alimentation",
+                    "Transport",
+                    "Santé",
+                    "Logement",
+                    "Autre"
+                )
+
+                Box {
+                    Button(
+                        onClick = {
+                            categoryMenuExpanded = true
+                        }
+                    ) {
+                        Text("Categorie : $category")
+                    }
+
+                    DropdownMenu(
+                        expanded = categoryMenuExpanded,
+                        onDismissRequest = {
+                            categoryMenuExpanded = false
+                        }
+                    ) {
+                        categories.forEach { item ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(item)
+                                },
+                                onClick = {
+                                    category = item
+                                    categoryMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                //fin : champ category
 
                 if (messageErreur != null){
                     Text(
@@ -182,18 +241,28 @@ fun HommeScreen(
                             if (selectedExpense == null) {
                                 // Ajouter une nouvelle dépense
                                 viewModel.addExpense(
-                                    Expense(amount = montantSaisi)
+                                    Expense(
+                                        amount = montantSaisi,
+                                        description = description,
+                                        category = category
+                                    )
                                 ){
                                     amount = ""
+                                    description = ""
+                                    category = "Autre"
                                 }
                             } else {
                                 // Modifier la dépense sélectionnée
                                 viewModel.updateExpense(
                                     selectedExpense.copy(
-                                        amount = montantSaisi
+                                        amount = montantSaisi,
+                                        description = description,
+                                        category = category
                                     ),
                                     onSuccess = {
                                         amount = ""
+                                        description = ""
+                                        category = "Autre"
                                         expenseToEdit = null
                                     }
                                 )
