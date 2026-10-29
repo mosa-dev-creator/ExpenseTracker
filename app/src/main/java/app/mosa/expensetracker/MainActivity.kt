@@ -42,6 +42,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import app.mosa.expensetracker.ui.theme.ExpenseTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.key
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -60,6 +68,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun formatExpenseDate(timestamp: Long): String {
+    if (timestamp == 0L) {
+        return "Date inconnue"
+    }
+
+    val date = Date(timestamp)
+    val formater = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    return formater.format(date)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HommeScreen(
     modifier: Modifier = Modifier
@@ -76,11 +96,19 @@ fun HommeScreen(
     var category by remember { mutableStateOf(value = "Autre") }
     var expenseToEdit by remember { mutableStateOf<Expense?>(value = null) }
 
+    var selectedDate by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var datePickerState = key(selectedDate) {
+        rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate
+        )
+    }
+
     val uiState = viewModel.uiState.collectAsState()
     val state = uiState.value
 
     Column(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
@@ -104,11 +132,13 @@ fun HommeScreen(
 
                 val totalExpenses = state.expenses.sumOf { it.amount }
 
+                //Titre
                 Text(
                     text = "Total des dépenses",
                     fontWeight = FontWeight.Bold
                 )
 
+                //Total
                 Text(
                     text = totalExpenses.toString()
                 )
@@ -118,7 +148,9 @@ fun HommeScreen(
                         text = "Aucune dépense enregistrée. Ajoutez votre première dépense ! "
                     )
                 } else {
-                    LazyColumn {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         items(state.expenses.size){ index ->
 
                             val expense = state.expenses[index]
@@ -128,16 +160,44 @@ fun HommeScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                //Dépense
-                                Text(
-                                    text = expense.amount.toString(),
+                                //AFFICHAGE
+                                Column(
                                     modifier = Modifier.clickable {
                                         expenseToEdit = expense
                                         amount = expense.amount.toString()
                                         description = expense.description
+                                        selectedDate = expense.date
                                         category = expense.category
                                     }
-                                )
+                                ) {
+                                    //Montant
+                                    Text(
+                                        text = expense.amount.toString(),
+                                    )
+
+                                    //Date
+                                    Text(
+                                        text = formatExpenseDate(expense.date),
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    //Description
+                                    if (expense.description.isNotBlank()){
+                                        Text(
+                                            text = expense.description,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+
+                                    //Category
+                                    Text(
+                                        text = "Catégorie : ${expense.category}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
 
                                 //Icone Supprimer
                                 IconButton(
@@ -172,7 +232,11 @@ fun HommeScreen(
                     onValueChange = { amount = it },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
-                    )
+                    ),
+                    label = {
+                        Text("Montant de la dépense")
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 //Champ : description
@@ -184,6 +248,15 @@ fun HommeScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                //Bouton : date
+                Button(
+                    onClick = {
+                        showDatePicker = true
+                    }
+                ) {
+                    Text("Choisir la date : ${formatExpenseDate(selectedDate)}")
+                }
 
                 //Champ : category
                 var categoryMenuExpanded by remember { mutableStateOf(false) }
@@ -244,11 +317,13 @@ fun HommeScreen(
                                     Expense(
                                         amount = montantSaisi,
                                         description = description,
+                                        date = selectedDate,
                                         category = category
                                     )
                                 ){
                                     amount = ""
                                     description = ""
+                                    selectedDate = System.currentTimeMillis()
                                     category = "Autre"
                                 }
                             } else {
@@ -257,12 +332,14 @@ fun HommeScreen(
                                     selectedExpense.copy(
                                         amount = montantSaisi,
                                         description = description,
+                                        date = selectedDate,
                                         category = category
                                     ),
                                     onSuccess = {
                                         amount = ""
                                         description = ""
                                         category = "Autre"
+                                        selectedDate = System.currentTimeMillis()
                                         expenseToEdit = null
                                     }
                                 )
@@ -292,6 +369,43 @@ fun HommeScreen(
                     Text(text = "Réessayer")
                 }
             }
+        }
+    }
+
+    //DatepickerDialog
+    if (showDatePicker){
+        DatePickerDialog(
+            onDismissRequest = {
+                showDatePicker = false
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val dateChoisie = datePickerState.selectedDateMillis
+
+                        if (dateChoisie != null){
+                            selectedDate = dateChoisie
+                        }
+
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("Confirmer")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("Annuler")
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState
+            )
         }
     }
 }
